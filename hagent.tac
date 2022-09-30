@@ -11,23 +11,21 @@ which twistd will look for
 """
 
 import os
+import subprocess
+import json
 
 from twisted.application import internet, service
 from twisted.web import server, static
 from twisted.web.resource import Resource
-
-class Handler(Resource):
-    def __init__(self, cmd):
-        Resource.__init__(self)
-        self.cmd = cmd
-
-    def render_GET(self, request):
-        request.responseHeaders.addRawHeader("Content-Type", "text/plain")
-        return (b"cmd: " + self.cmd + b"\n")
+from twisted.python import log
 
 class Dispatcher(Resource):
-  def getChild(self, cmd, request):
-      return Handler(cmd)
+    def render_POST(self, request):
+        params = json.loads(request.content.read())
+        log.msg(f'content: {params}')
+        #subprocess.Popen("xset dpms force off".split())
+        request.responseHeaders.addRawHeader("Content-Type", "application/json")
+        return ('{ "command": "hz" }'.encode('utf-8'))
 
 def getWebService():
     """
@@ -37,8 +35,14 @@ def getWebService():
     underneath the current working directory.
     """
     # create a resource to serve static files
-    dispatcher = server.Site(Dispatcher())
-    return internet.TCPServer(8282, dispatcher)
+    hagent = Resource()
+    hagent.putChild(b"api", Dispatcher())
+
+    root = Resource()
+    root.putChild(b"hagent", hagent)
+    
+    site = server.Site(root)
+    return internet.TCPServer(8282, site)
 
 # this is the core part of any tac file, the creation of the root-level
 # application object
