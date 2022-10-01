@@ -1,0 +1,22 @@
+##########################################################
+# Put me at ~/.config/systemd/user/hagent.service
+# run systemctl --user enable hagent
+#
+[Unit]
+Description=Home Assistant Agent (Linux Desktop)
+Documentation=https://github.com/RushOnline/hagent
+After=NetworkManager-wait-online.service
+
+[Service]
+# Load ~/.config/hagent/env where you can for example set
+# HASS_TOKEN, HASS_DEVICE_NAME etc.
+# EnvironmentFile=%E/hagent/env
+# Make sure to set the absolute path to hagent correctly below
+WorkingDirectory=%h/workspace/rush/hagent
+ExecStart=%h/workspace/rush/hagent/.twisted/bin/twistd -ny hagent.tac
+Restart=on-failure
+RestartSec=5
+Type=simple
+
+[Install]
+WantedBy=multi-user.target
