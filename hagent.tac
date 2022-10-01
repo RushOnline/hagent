@@ -24,6 +24,18 @@ class state:
     dpms = True
     sleep = 0
 
+def screen_width():
+    return int(subprocess.check_output(["xrandr"]).decode("utf-8").split('\n')[0].split(',')[1].split()[1])
+
+def monitor_width():
+    return int(subprocess.check_output(["xrandr"]).decode("utf-8").split('\n')[1].split()[3].split('x')[0])
+
+def toggle_hdmi():
+    if monitor_width() == screen_width():
+        subprocess.Popen("xrandr --output HDMI-0 --auto --left-of DVI-D-0".split())
+    else:
+        subprocess.Popen("xrandr --output HDMI-0 --off".split())
+
 class Dispatcher(Resource):
     def render_POST(self, request):
         params = json.loads(request.content.read())
@@ -41,12 +53,14 @@ class Dispatcher(Resource):
             else:
                 log.msg(f'DPMS OFF')
                 subprocess.Popen("xset dpms force off".split()).wait()
-        if cmd == 'sleep':
+        elif cmd == 'sleep':
             state.sleep += 1
             if state.sleep > 3:
                 subprocess.Popen("systemctl suspend --ignore-inhibitors --no-ask-password".split()).wait()
                 state.sleep = 0
-
+        elif cmd == 'toggle-hdmi':
+            toggle_hdmi()
+        
         request.responseHeaders.addRawHeader("Content-Type", "application/json")
         return ('{ "command": "hz" }'.encode('utf-8'))
 
