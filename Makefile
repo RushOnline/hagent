@@ -5,6 +5,6 @@ bootstrap: .twisted
 
 .twisted:
 	virtualenv $@
-	$@/bin/pip install twisted[tls]
+	$@/bin/pip install twisted[tls] twisted-mqtt
 
 .PHONY: run bootstrap
