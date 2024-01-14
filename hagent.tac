@@ -28,22 +28,24 @@ from twisted.internet             import reactor
 from twisted.internet.endpoints   import clientFromString
 from twisted.application.internet import ClientService, backoffPolicy
 
-# from twisted.logger   import (
-#     Logger, LogLevel, globalLogBeginner, textFileLogObserver,
-#     FilteringLogObserver, LogLevelFilterPredicate)
-
+from zeroconf import Zeroconf
 from mqtt.client.factory import MQTTFactory
+import configparser
 
-# ----------------
 # Global variables
-# ----------------
-
-# Global object to control globally namespace logging
-# logLevelFilterPredicate = LogLevelFilterPredicate(defaultLogLevel=LogLevel.info)
-
 class state:
     dpms = True
     sleep = 0
+
+config = configparser.ConfigParser()
+
+broker_type = '_mqtt._tcp.local.'
+broker_name = 'Your mosquitto service name'
+broker_address = None
+broker_login = None
+broker_password = None
+
+# Handler functions
 
 def screen_width():
     return int(subprocess.check_output(["xrandr"]).decode("utf-8").split('\n')[0].split(',')[1].split()[1])
@@ -150,14 +152,15 @@ class MQTTService(ClientService):
         self.protocol.onPublish       = self.onPublish
         self.protocol.onDisconnection = self.onDisconnection
         self.protocol.setWindowSize(3)
+
         try:
             yield self.protocol.connect("TwistedMQTT-subs", keepalive=60,
-                                        username=BROKER_LOGIN,password=BROKER_PASSWORD)
+                                        username=broker_login,password=broker_password)
             yield self.subscribe()
         except Exception as e:
-            log.msg(f"Connecting to {BROKER} raised {e!s}")
+            log.msg(f"Connecting to {broker_name} raised {e!s}")
         else:
-            log.msg(f"Connected and subscribed to {BROKER}")
+            log.msg(f"Connected and subscribed to {broker_name}")
 
 
     def subscribe(self):
@@ -190,6 +193,22 @@ class MQTTService(ClientService):
         log.msg(f" >< Connection was lost ! ><, reason={reason}")
         self.whenConnected().addCallback(self.connectToBroker)
 
+config.read('hagent.conf')
+
+broker_login = config['broker']['login']
+broker_password = config['broker']['password']
+broker_type = config['broker']['type']
+broker_name = config['broker']['name']
+
+zeroconf = Zeroconf()
+try:
+    broker_address = config['broker']['address']
+
+    si = zeroconf.get_service_info(broker_type, broker_name + '.' + broker_type)
+    broker_address = f"tcp:{si.parsed_addresses().pop(0)}:{si.port}"
+    log.msg(f"{broker_name}: {broker_address}")
+finally:
+    zeroconf.close()
 
 # this is the core part of any tac file, the creation of the root-level
 # application object
@@ -200,6 +219,6 @@ service = getWebService()
 service.setServiceParent(application)
 
 mqttFactory     = MQTTFactory(profile=MQTTFactory.SUBSCRIBER)
-mqttEndpoint    = clientFromString(reactor, BROKER)
+mqttEndpoint    = clientFromString(reactor, config['broker']['address'])
 mqttService     = MQTTService(mqttEndpoint, mqttFactory)
 mqttService.setServiceParent(application)
