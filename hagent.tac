@@ -45,19 +45,28 @@ broker_address = None
 broker_login = None
 broker_password = None
 
+LEFT_MONITOR = 'HDMI-0'
+RIGHT_MONITOR = 'HDMI-1'
+
 # Handler functions
 
 def screen_width():
     return int(subprocess.check_output(["xrandr"]).decode("utf-8").split('\n')[0].split(',')[1].split()[1])
 
 def monitor_width():
-    return int(subprocess.check_output(["xrandr"]).decode("utf-8").split('\n')[1].split()[3].split('x')[0])
+    for line in subprocess.check_output(["xrandr"]).decode("utf-8").split('\n'):
+        tokens = line.split()
+        if tokens[1] != 'connected' or tokens[2] != 'primary': continue
+        return int(tokens[3].split('x')[0])
+    return 0
 
 def toggle_hdmi():
     if monitor_width() == screen_width():
-        subprocess.Popen("xrandr --output HDMI-0 --auto --left-of DVI-D-0".split())
+        log.msg('monitor_width() == screen_width()')
+        subprocess.Popen(f"xrandr --output {LEFT_MONITOR} --auto --left-of {RIGHT_MONITOR}".split())
     else:
-        subprocess.Popen("xrandr --output HDMI-0 --off".split())
+        log.msg('monitor_width() != screen_width()')
+        subprocess.Popen(f"xrandr --output {LEFT_MONITOR} --off".split())
 
 def handle_command(cmd):
     if cmd != 'sleep': state.sleep = 0
