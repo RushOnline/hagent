@@ -4,11 +4,13 @@
     // Для получения дополнительной информации посетите: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+        
         {
-            "name": "Python: текущий файл",
-            "type": "python",
+            "name": "HAgent",
+            "type": "debugpy",
             "request": "launch",
-            "program": "${file}",
+            "program": "${workspaceFolder}/.twisted/bin/twistd",
+            "args": ["-ny", "${workspaceFolder}/hagent.tac"],
             "console": "integratedTerminal",
             "justMyCode": true,
         }
