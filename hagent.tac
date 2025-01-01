@@ -163,7 +163,7 @@ class MQTTService(ClientService):
         self.protocol.setWindowSize(3)
 
         try:
-            yield self.protocol.connect("TwistedMQTT-subs", keepalive=60,
+            yield self.protocol.connect("HAgent", keepalive=60,
                                         username=broker_login,password=broker_password)
             yield self.subscribe()
         except Exception as e:
