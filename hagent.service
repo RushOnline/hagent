@@ -13,6 +13,7 @@ After=NetworkManager-wait-online.service
 # EnvironmentFile=%E/hagent/env
 # Make sure to set the absolute path to hagent correctly below
 WorkingDirectory=%h/workspace/rush/hagent
+ExecStartPre=/usr/bin/rm -rf %h/workspace/rush/hagent/twistd.pid
 ExecStart=%h/workspace/rush/hagent/.twisted/bin/twistd -ny hagent.tac
 Restart=on-failure
 RestartSec=5
