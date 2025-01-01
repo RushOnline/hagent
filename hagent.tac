@@ -214,8 +214,9 @@ try:
     broker_address = config['broker']['address']
 
     si = zeroconf.get_service_info(broker_type, broker_name + '.' + broker_type)
-    broker_address = f"tcp:{si.parsed_addresses().pop(0)}:{si.port}"
-    log.msg(f"{broker_name}: {broker_address}")
+    if si:
+        broker_address = f"tcp:{si.parsed_addresses().pop(0)}:{si.port}"
+        log.msg(f"{broker_name}: {broker_address}")
 finally:
     zeroconf.close()
 
@@ -228,6 +229,6 @@ service = getWebService()
 service.setServiceParent(application)
 
 mqttFactory     = MQTTFactory(profile=MQTTFactory.SUBSCRIBER)
-mqttEndpoint    = clientFromString(reactor, config['broker']['address'])
+mqttEndpoint    = clientFromString(reactor, broker_address)
 mqttService     = MQTTService(mqttEndpoint, mqttFactory)
 mqttService.setServiceParent(application)
